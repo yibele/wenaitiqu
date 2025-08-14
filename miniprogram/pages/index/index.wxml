@@ -1,0 +1,81 @@
+<view class="container">
+  <!-- 消息提示组件 -->
+  <t-message id="t-message" />
+  
+  <!-- 标题区域 -->
+  <view class="header">
+    <text class="title">提取文案</text>
+    <text class="subtitle">输入视频链接，获取视频文案</text>
+  </view>
+
+  <!-- 输入框容器 -->
+  <view class="input-container">
+    <textarea
+      class="input-area"
+      placeholder="请输入抖音、小红书、B站、快手视频链接..."
+      placeholder-class="placeholder"
+      value="{{videoUrl}}"
+      bindinput="onInput"
+    />
+  </view>
+
+  <!-- 按钮组 -->
+  <view class="button-section">
+    <t-button icon="paste" theme="light" block size="large" bind:tap="onPaste" t-class="btn-secondary">粘贴</t-button>
+    <!-- 行级注释：解析按钮，parsing为true时禁用按钮 -->
+    <t-button
+      theme="primary"
+      block
+      size="large"
+      disabled="{{parsing}}"
+      loading="{{parsing}}"
+      bind:tap="onParse"
+      t-class="btn-primary"
+    >
+      解析
+    </t-button>
+  </view>
+
+  <!-- 底部提示 -->
+
+  <t-footer text="支持平台：抖音 小红书 B站 快手"></t-footer>
+  <t-footer text="复制文案和下载视频需要观看激励视频广告"></t-footer>
+
+  <!-- 结果弹框 -->
+  <t-popup visible="{{showResult}}" class="result-modal" bind:visible-change="onModalBackdrop" placement="center">
+   <view class="result-content" catchtap="noop">
+      <view class="close-btn" bindtap="closeResult">
+        <t-icon name="close" t-class="close-icon" />
+      </view>
+      <view class="video-info">
+        <image class="video-cover" mode="aspectFill" src="{{result.cover}}" />
+        <text class="video-title">{{result.title}}</text>
+        <view class="video-content-wrapper">
+          <!-- 行级注释: 显示当前内容（预览或完整） -->
+          <text class="video-content">{{displayContent}}</text>
+        </view>
+      </view>
+      <view class="action-buttons">
+        <t-button t-class="btn-copy" bind:tap="copyContent">
+          <t-icon wx:if="{{!isContentUnlocked}}" name="lock" size="16" slot="icon" />
+          <t-icon wx:else name="check" size="16" slot="icon" />
+          {{isContentUnlocked ? '复制完整文案' : '复制文案'}}
+        </t-button>
+        <t-button t-class="btn-download" bind:tap="downloadVideo">
+          <t-icon wx:if="{{!isContentUnlocked}}" name="lock" size="16" slot="icon" />
+          <t-icon wx:else name="download" size="16" slot="icon" />
+          {{isContentUnlocked ? '下载视频' : '解锁下载'}}
+        </t-button>
+      </view>
+    </view>
+</t-popup>
+</view>
+<!-- <t-fab bind:click="handleClick" class="t-fab" icon="user-1" aria-label="我的"> -->
+<t-fab
+  customStyle="{{'right: 48rpx;bottom:80rpx;'}}"
+  bind:click="handleClick"
+>
+  <view  class="wrap">
+      <t-icon name="user-1" size="24" />
+    </view>
+</t-fab>

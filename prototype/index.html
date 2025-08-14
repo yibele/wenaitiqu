@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提取文案小程序</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        /* 引入自定义字体 */
+        @font-face {
+            font-family: 'LogoZhanku';
+            src: url('../static/fonts/logo_zhanku.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        /* iPhone 15 Pro 尺寸: 393 x 852 */
+        .phone-container {
+            width: 393px;
+            height: 852px;
+            margin: 0 auto;
+            background: var(--background);
+            position: relative;
+            overflow: hidden;
+            font-family: 'LogoZhanku', sans-serif;
+        }
+        
+        /* 引入 shadcn_ui.css 变量 */
+        :root {
+            --background: oklch(0.9821 0 0);
+            --foreground: oklch(0.3485 0 0);
+            --card: oklch(1.0000 0 0);
+            --card-foreground: oklch(0.3485 0 0);
+            --popover: oklch(1.0000 0 0);
+            --popover-foreground: oklch(0.3485 0 0);
+            --primary: oklch(0.4891 0 0);
+            --primary-foreground: oklch(0.9551 0 0);
+            --secondary: oklch(0.9006 0 0);
+            --secondary-foreground: oklch(0.3485 0 0);
+            --muted: oklch(0.9158 0 0);
+            --muted-foreground: oklch(0.4313 0 0);
+            --accent: oklch(0.9354 0.0456 94.8549);
+            --accent-foreground: oklch(0.4015 0.0436 37.9587);
+            --destructive: oklch(0.6627 0.0978 20.0041);
+            --destructive-foreground: oklch(1.0000 0 0);
+            --border: oklch(0.5538 0.0025 17.2320);
+            --input: oklch(1.0000 0 0);
+            --ring: oklch(0.7058 0 0);
+            --radius: 0.625rem;
+            --shadow-sm: 1px 4px 5px 0px hsl(0 0% 0% / 0.03), 1px 1px 2px -1px hsl(0 0% 0% / 0.03);
+            --shadow: 1px 4px 5px 0px hsl(0 0% 0% / 0.03), 1px 1px 2px -1px hsl(0 0% 0% / 0.03);
+            --shadow-md: 1px 4px 5px 0px hsl(0 0% 0% / 0.03), 1px 2px 4px -1px hsl(0 0% 0% / 0.03);
+            --shadow-lg: 1px 4px 5px 0px hsl(0 0% 0% / 0.03), 1px 4px 6px -1px hsl(0 0% 0% / 0.03);
+            
+            /* 字体系统 */
+            --font-display: "LogoZhanku", sans-serif;
+            --font-body: "LogoZhanku", sans-serif;
+            --font-mono: "LogoZhanku", sans-serif;
+        }
+        
+        .dark {
+            --background: oklch(0.2891 0 0);
+            --foreground: oklch(0.8945 0 0);
+            --card: oklch(0.3211 0 0);
+            --card-foreground: oklch(0.8945 0 0);
+            --popover: oklch(0.3211 0 0);
+            --popover-foreground: oklch(0.8945 0 0);
+            --primary: oklch(0.7572 0 0);
+            --primary-foreground: oklch(0.2891 0 0);
+            --secondary: oklch(0.4676 0 0);
+            --secondary-foreground: oklch(0.8078 0 0);
+            --muted: oklch(0.3904 0 0);
+            --muted-foreground: oklch(0.7058 0 0);
+            --accent: oklch(0.9067 0 0);
+            --accent-foreground: oklch(0.3211 0 0);
+            --destructive: oklch(0.7915 0.0491 18.2410);
+            --destructive-foreground: oklch(0.2891 0 0);
+            --border: oklch(0.4276 0 0);
+            --input: oklch(0.3211 0 0);
+            --ring: oklch(0.8078 0 0);
+        }
+        
+        /* 自定义样式 */
+        .input-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: var(--primary-foreground);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        
+        .status-bar {
+            height: 47px;
+            background: var(--background);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--foreground);
+            font-family: 'LogoZhanku', sans-serif;
+        }
+        
+        .home-indicator {
+            height: 34px;
+            background: var(--background);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .home-indicator::after {
+            content: '';
+            width: 134px;
+            height: 5px;
+            background: var(--foreground);
+            border-radius: 3px;
+            opacity: 0.3;
+        }
+        
+        /* 全屏加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 结果弹框 */
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            padding: 20px;
+        }
+        
+        .result-content {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            max-width: 350px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .result-header {
+            padding: 20px 20px 0;
+            text-align: center;
+        }
+        
+        .result-body {
+            padding: 20px;
+        }
+        
+        .video-cover {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+        
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .video-author {
+            font-size: 14px;
+            color: var(--muted-foreground);
+            margin-bottom: 16px;
+        }
+        
+        .video-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--foreground);
+            background: var(--muted);
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn-copy, .btn-download {
+            flex: 1;
+            padding: 12px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-copy {
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+        
+        .btn-download {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+        }
+        
+        .btn-copy:hover, .btn-download:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <!-- iPhone 15 Pro 容器 -->
+    <div class="phone-container">
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="flex items-center space-x-1">
+                <span class="material-icons text-sm">signal_cellular_4_bar</span>
+                <span class="material-icons text-sm">wifi</span>
+                <span class="material-icons text-sm">battery_full</span>
+            </div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="flex-1 flex flex-col items-center justify-center px-8 py-12">
+            <!-- 标题 -->
+            <div class="text-center mb-12">
+                <h1 class="text-3xl font-bold text-foreground mb-2" style="font-family: 'LogoZhanku', sans-serif; letter-spacing: -0.02em;">提取文案</h1>
+                <p class="text-muted-foreground text-sm" style="font-family: 'LogoZhanku', sans-serif;">输入视频链接，获取视频文案</p>
+            </div>
+            
+            <!-- 输入框容器 -->
+            <div class="w-full max-w-sm">
+                <div class="input-container p-4 mb-6">
+                    <textarea 
+                        id="videoUrl" 
+                        placeholder="请输入抖音、小红书、B站、快手视频链接..."
+                        class="w-full h-24 resize-none bg-transparent text-foreground placeholder-muted-foreground focus:outline-none text-sm leading-relaxed"
+                        style="font-family: 'LogoZhanku', sans-serif;"
+                    ></textarea>
+                </div>
+                
+                <!-- 按钮组 -->
+                <div class="flex space-x-3">
+                    <button class="btn-secondary flex-1 py-3 px-4 flex items-center justify-center space-x-2">
+                        <span class="material-icons text-sm">content_paste</span>
+                        <span class="text-sm font-medium" style="font-family: var(--font-body);">粘贴</span>
+                    </button>
+                    <button class="btn-primary flex-1 py-3 px-4 flex items-center justify-center space-x-2">
+                        <span class="material-icons text-sm">search</span>
+                        <span class="text-sm font-medium" style="font-family: var(--font-body);">解析</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 底部提示 -->
+            <div class="mt-12 text-center">
+                <p class="text-muted-foreground text-xs leading-relaxed" style="font-family: var(--font-body);">
+                    支持平台：抖音、小红书、B站、快手<br>
+                    复制文案和下载视频需要观看激励视频广告
+                </p>
+            </div>
+        </div>
+        
+        <!-- 底部指示器 -->
+        <div class="home-indicator"></div>
+    </div>
+    
+    <!-- 全屏加载动画 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p style="font-family: 'LogoZhanku', sans-serif; font-size: 16px;">正在解析视频...</p>
+        </div>
+    </div>
+    
+    <!-- 结果弹框 -->
+    <div class="result-modal" id="resultModal">
+        <div class="result-content">
+            <div class="close-btn" onclick="closeResultModal()">
+                <span class="material-icons" style="font-size: 18px;">close</span>
+            </div>
+            
+            <div class="result-header">
+                <h3 style="font-family: 'LogoZhanku', sans-serif; font-size: 18px; font-weight: 600;">解析结果</h3>
+            </div>
+            
+            <div class="result-body">
+                <img id="videoCover" class="video-cover" src="" alt="视频封面">
+                <h4 id="videoTitle" class="video-title" style="font-family: 'LogoZhanku', sans-serif;"></h4>
+                <p id="videoAuthor" class="video-author" style="font-family: 'LogoZhanku', sans-serif;"></p>
+                <div id="videoContent" class="video-content" style="font-family: 'LogoZhanku', sans-serif;"></div>
+                
+                <div class="result-actions">
+                    <button class="btn-copy" onclick="copyContent()" style="font-family: 'LogoZhanku', sans-serif;">
+                        <span class="material-icons" style="font-size: 16px; margin-right: 4px;">content_copy</span>
+                        复制文案
+                    </button>
+                    <button class="btn-download" onclick="downloadVideo()" style="font-family: 'LogoZhanku', sans-serif;">
+                        <span class="material-icons" style="font-size: 16px; margin-right: 4px;">download</span>
+                        下载视频
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 模拟视频数据
+        const mockVideoData = {
+            cover: 'https://picsum.photos/400/300?random=1',
+            title: '超治愈的猫咪日常，看完心情瞬间变好！',
+            author: '@萌宠日记',
+            content: '今天给大家分享一只超级可爱的小猫咪，它的每一个动作都让人忍不住想笑。这只小猫咪特别喜欢晒太阳，每次看到阳光就会立刻跑过去，然后摆出各种可爱的姿势。它的主人说，这只猫咪是他们家的开心果，每天都能带来很多欢乐。'
+        };
+        
+        // 粘贴功能
+        document.querySelector('.btn-secondary').addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('videoUrl').value = text;
+            } catch (err) {
+                console.log('粘贴失败:', err);
+            }
+        });
+        
+        // 解析功能
+        document.querySelector('.btn-primary').addEventListener('click', async () => {
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) {
+                alert('请输入视频链接');
+                return;
+            }
+            
+            // 显示加载动画
+            showLoading();
+            
+            // 模拟解析过程
+            setTimeout(() => {
+                hideLoading();
+                showResult(mockVideoData);
+            }, 2000);
+        });
+        
+        // 显示加载动画
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        // 隐藏加载动画
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        // 显示结果弹框
+        function showResult(data) {
+            document.getElementById('videoCover').src = data.cover;
+            document.getElementById('videoTitle').textContent = data.title;
+            document.getElementById('videoAuthor').textContent = data.author;
+            document.getElementById('videoContent').textContent = data.content;
+            document.getElementById('resultModal').style.display = 'flex';
+        }
+        
+        // 关闭结果弹框
+        function closeResultModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+        
+        // 复制文案功能
+        function copyContent() {
+            const content = document.getElementById('videoContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('文案已复制到剪贴板！');
+            }).catch(() => {
+                alert('复制失败，请手动复制');
+            });
+        }
+        
+        // 下载视频功能
+        function downloadVideo() {
+            alert('观看激励视频广告后即可下载视频');
+        }
+        
+        // 点击弹框外部关闭
+        document.getElementById('resultModal').addEventListener('click', (e) => {
+            if (e.target.id === 'resultModal') {
+                closeResultModal();
+            }
+        });
+    </script>
+</body>
+</html>

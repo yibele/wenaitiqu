@@ -1,0 +1,12 @@
+{
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-fab": "tdesign-miniprogram/fab/fab",
+    "t-footer":"tdesign-miniprogram/footer/footer",
+    "t-message": "tdesign-miniprogram/message/message"
+  },
+  "navigationBarBackgroundColor" : "#fafafa"
+}

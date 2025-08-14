@@ -1,0 +1,349 @@
+// 主容器
+.container {
+  min-height: 100vh;
+  background: #fafafa;
+  padding: 0 64rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.logo {
+  width: 200rpx;
+  height: 200rpx;
+}
+// 标题区域
+.header {
+  text-align: center;
+  margin-bottom: 96rpx;
+  margin-top : 140rpx;
+  .title {
+    display: block;
+    font-size: 72rpx;
+    font-weight: bold;
+    color: #171717;
+    margin-bottom: 16rpx;
+    letter-spacing: -0.02em;
+  }
+  
+  .subtitle {
+    display: block;
+    font-size: 28rpx;
+    color: #737373;
+  }
+}
+
+// 输入框容器
+.input-container {
+  width: 100%;
+  max-width: 640rpx;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 48rpx;
+  border: 1px solid #ccc;
+  .input-area {
+    width: 100%;
+    height: 192rpx;
+    background: transparent;
+    color: #171717;
+    font-size: 28rpx;
+    line-height: 1.4;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: "none";
+  }
+  
+  .placeholder {
+    color: #8b8a8a;
+  }
+}
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 0;
+  border-radius: 50rpx;
+  box-shadow: 0px 5px 5px -3px rgba(0, 0, 0, 0.1), 0px 8px 10px 1px rgba(0, 0, 0, 0.06),
+    0px 3px 14px 2px rgba(0, 0, 0, 0.05);
+  background: #616161;
+  width: 100rpx;
+  height: 100rpx;
+  box-sizing: border-box;
+  color: #fafafa;
+}
+
+// 按钮组
+.button-section {
+  display: flex;
+  gap: 24rpx;
+  width: 100%;
+  max-width: 640rpx;
+  margin-bottom: 96rpx;
+  
+  // 重置 TDesign 按钮样式
+  .btn-secondary {
+    flex: 1;
+    height: 96rpx;
+    background: #f5f5f5 !important;
+    color: #616161 !important;
+    border: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+    font-size: 28rpx !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-family: 'ZhanKuLogo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+  
+  .btn-primary {
+    flex: 1;
+    height: 96rpx;
+    background:#616161!important;
+    color: #fafafa !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+    font-size: 28rpx !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-family: 'ZhanKuLogo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    
+    &[disabled] {
+      opacity: 0.7;
+      transform: none !important;
+    }
+  }
+  
+  .btn-icon {
+    font-size: 28rpx !important;
+  }
+  
+  .btn-text {
+    font-size: 28rpx;
+    font-weight: 500;
+  }
+}
+
+// 底部提示
+.footer-tips {
+  position: fixed;
+  bottom: 40rpx; // 距离底部的距离
+  left: 0;
+  right: 0;
+  width: 100%;
+  text-align: center;
+  
+  .tip-text {
+    display: block;
+    font-size: 24rpx;
+    color: #a3a3a3;
+    line-height: 1.6;
+    margin-bottom: 8rpx;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// 全屏加载动画
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  
+  .loading-content {
+    text-align: center;
+    color: #ffffff;
+    
+    .loading-text-class {
+      color: #ffffff !important;
+      font-size: 32rpx !important;
+      margin-top: 40rpx !important;
+    }
+  }
+}
+
+// 结果弹框
+.result-modal {
+  top: 0;
+  left: 0;
+  width: 90vw;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  font-family: 'Courier New', Courier, monospace;
+  
+  .result-content {
+    background: #ffffff;
+    border-radius: 20rpx;
+    box-shadow: 0 8rpx 20rpx 0 rgba(0, 0, 0, 0.08), 0 8rpx 12rpx -2rpx rgba(0, 0, 0, 0.08);
+    max-width: 700rpx;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    
+    .close-btn {
+      position: absolute;
+      top: 24rpx;
+      right: 24rpx;
+      width: 64rpx;
+      height: 64rpx;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .close-icon {
+        font-size: 36rpx !important;
+        color: #737373;
+      }
+    }
+    
+    .result-header {
+      padding: 40rpx 40rpx 0;
+      text-align: center;
+      
+      .result-title {
+        font-size: 36rpx;
+        font-weight: 600;
+        color: #171717;
+      }
+    }
+    
+    .video-info {
+      padding: 40rpx;
+      
+      .video-cover {
+        width: 100%;
+        height: 400rpx;
+        border-radius: 20rpx;
+        margin-bottom: 32rpx;
+      }
+      
+      .video-title {
+        display: block;
+        font-size: 32rpx;
+        font-weight: 600;
+        color: #171717;
+        margin-bottom: 16rpx;
+        line-height: 1.4;
+      }
+      
+      .video-url-wrapper {
+        margin-bottom: 32rpx;
+        
+        .video-url {
+          display: block;
+          font-size: 24rpx;
+          color: #737373;
+          line-height: 1.4;
+          word-break: break-all;
+        }
+      }
+      
+      .video-content-wrapper {
+        background: #f5f5f5;
+        padding: 24rpx;
+        border-radius: 20rpx;
+        margin-bottom: 32rpx;
+        
+        .video-content {
+          font-size: 28rpx;
+          line-height: 1.6;
+          color: #171717;
+        }
+        
+        // 解锁部分样式
+        .unlock-section {
+          margin-top: 24rpx;
+          padding-top: 24rpx;
+          border-top: 2rpx dashed #ddd;
+          
+          .unlock-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12rpx;
+            margin-bottom: 24rpx;
+            
+            .unlock-text {
+              font-size: 26rpx;
+              color: #ff6b35;
+              font-weight: 500;
+            }
+          }
+          
+          .unlock-btn {
+            width: 100%;
+            height: 80rpx !important;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+            border: none !important;
+            border-radius: 16rpx !important;
+            font-size: 28rpx !important;
+            font-weight: 600 !important;
+            color: white !important;
+            box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.3) !important;
+            
+            &:active {
+              transform: translateY(2rpx);
+              box-shadow: 0 4rpx 12rpx rgba(255, 107, 53, 0.3) !important;
+            }
+          }
+        }
+      }
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 24rpx;
+      padding: 0 40rpx 40rpx;
+      .btn-copy {
+        flex: 1;
+        height: 96rpx;
+        background: #f5f5f5 !important;
+        color: #616161 !important;
+        border: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8rpx;
+        font-size: 28rpx !important;
+        font-weight: 500;
+      }
+      
+      .btn-download {
+        flex: 1;
+        height: 96rpx;
+        background:#616161!important;
+        color: #fafafa !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8rpx;
+        font-size: 28rpx !important;
+        font-weight: 500;
+      }
+      
+      .btn-icon-small {
+        font-size: 32rpx !important;
+      }
+    }
+  }
+}
