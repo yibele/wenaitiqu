@@ -39,27 +39,13 @@ interface AppConfig {
   profileFooterInfo: string; // profile footerinfo
   
   // 订阅消息配置
-  subscriptionTemplateIds: {
-    success: string; // 成功模板ID
-    failed: string;  // 失败模板ID
-  };
-  
-  // Webhook配置
-  webhookConfig: {
-    secret: string;  // Webhook安全密钥
-    timeout: number; // 超时时间（秒）
-  };
-  
-  // 任务配置
-  taskConfig: {
-    maxRetries: number;        // 最大重试次数
-    expirationHours: number;   // 任务过期时间（小时）
-    pollIntervalSeconds: number; // 轮询间隔（秒）
-  };
+  subscriptionTemplateIds: Array<string>,
+
   
   // 其他配置
   version: string;
   updateTime: Date;
+
 }
 
 // 用户统计数据接口定义

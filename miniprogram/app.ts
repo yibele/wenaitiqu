@@ -210,7 +210,8 @@ App({
       homeFooterInfo2: '复制文案和下载视频需要观看激励视频广告',
       profileFooterInfo: '感谢您使用文案提取助手',
       version: '1.0.0',
-      updateTime: new Date()
+      updateTime: new Date(),
+      subscriptionTemplateIds : ['123123123'],
     };
     
     this.globalData.appConfig = defaultConfig;
