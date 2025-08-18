@@ -3,16 +3,19 @@ App({
   globalData: {
     userInfo: null as UserInfo | null,
     openid: '',
+    appConfig: null as AppConfig | null,
+    userStats: null as UserStats | null,
   },
 
+  // 行级注释：配置加载完成的 Promise 控制器
+  _configReadyResolve: null as ((config: AppConfig) => void) | null,
+  _configReadyPromise: null as Promise<AppConfig> | null,
+  _isReady: false,
+
   onLaunch() {
-    // 行级注释: 加载自定义字体
-    wx.loadFontFace({
-      family: 'ZhanKuLogo',
-      source: 'url("/static/fonts/logo_zhanku.otf")',
-      global: true,
-      success: console.log,
-      fail: console.error,
+    // 行级注释: 初始化配置加载 Promise
+    this._configReadyPromise = new Promise<AppConfig>((resolve) => {
+      this._configReadyResolve = resolve;
     });
 
     // 行级注释: 初始化云开发
@@ -21,7 +24,7 @@ App({
       traceUser: true,
     });
 
-    // 行级注释: 执行静默登录
+    // 行级注释: 执行静默登录（同时获取配置）
     this.silentLogin();
   },
 
@@ -29,21 +32,44 @@ App({
   async silentLogin() {
     try {
       
-      // 行级注释: 调用云函数获取openid
+      // 行级注释: 调用云函数获取openid和配置信息
       const loginResult = await wx.cloud.callFunction({
         name: 'login'
       });
 
-      if (loginResult.result && (loginResult.result as any).openid) {
-        const openid = (loginResult.result as any).openid;
+      const result = loginResult.result as any;
+      if (result && result.openid) {
+        const openid = result.openid;
         this.globalData.openid = openid;
 
-        // 行级注释: 查询或创建用户记录
-        await this.createOrUpdateUser(openid);
+        // 行级注释: 保存配置信息
+        if (result.appConfig) {
+          this.globalData.appConfig = result.appConfig;
+          console.log('应用配置已加载:', result.appConfig);
+          // 行级注释: 通知配置加载完成
+          this._markConfigReady(result.appConfig);
+        } else {
+          console.warn('未获取到配置信息，使用默认配置');
+          const defaultConfig = await this.loadDefaultConfig();
+          // 行级注释: 通知默认配置加载完成
+          this._markConfigReady(defaultConfig);
+        }
+
+        // 行级注释: 保存用户统计数据
+        if (result.userStats) {
+          this.globalData.userStats = result.userStats;
+          console.log('用户统计数据已加载:', result.userStats);
+        } else {
+          console.warn('未获取到用户统计数据');
+        }
       }
 
     } catch (error) {
       console.error('静默登录失败:', error);
+      // 行级注释: 登录失败时也要加载默认配置
+      const defaultConfig = await this.loadDefaultConfig();
+      // 行级注释: 确保即使登录失败也通知配置就绪
+      this._markConfigReady(defaultConfig);
       wx.showToast({
         title: ' 用户登录失败，请联系管理员',
         icon: 'none'
@@ -164,5 +190,74 @@ App({
     } catch (error) {
       console.error('更新分享次数失败:', error);
     }
+  },
+
+  // 加载默认配置
+  async loadDefaultConfig(): Promise<AppConfig> {
+    // 行级注释: 使用默认配置
+    const defaultConfig: AppConfig = {
+      rewardedVideoAdId: 'adunit-xxx',
+      nativeTemplateAdId: 'adunit-yyy', 
+      interstitialAdId: 'adunit-zzz',
+      shareTitle: '提取文案 - 一键获取视频文案',
+      shareCover: '/static/imgs/index_icon.png',
+      homeNotice: '有问题请联系作者',
+      initialPoints: 100,
+      inviteRewardPoints: 50,
+      checkinPoints: 10,
+      adWatchInterval: 300,
+      homeFooterInfo1: '支持平台：抖音 小红书 B站 快手',
+      homeFooterInfo2: '复制文案和下载视频需要观看激励视频广告',
+      profileFooterInfo: '感谢您使用文案提取助手',
+      version: '1.0.0',
+      updateTime: new Date()
+    };
+    
+    this.globalData.appConfig = defaultConfig;
+    console.log('使用默认配置');
+    return defaultConfig;
+  },
+
+  // 获取应用配置的便捷方法
+  getAppConfig(): AppConfig | null {
+    return this.globalData.appConfig;
+  },
+
+  // 获取用户统计数据的便捷方法
+  getUserStats(): UserStats | null {
+    return this.globalData.userStats;
+  },
+
+  // 更新用户统计数据（本地）
+  updateUserStats(newStats: Partial<UserStats>): void {
+    if (this.globalData.userStats) {
+      this.globalData.userStats = {
+        ...this.globalData.userStats,
+        ...newStats
+      };
+      console.log('本地用户统计数据已更新:', this.globalData.userStats);
+    }
+  },
+
+  // 标记配置已就绪
+  _markConfigReady(config: AppConfig): void {
+    this._isReady = true;
+    if (this._configReadyResolve) {
+      this._configReadyResolve(config);
+      this._configReadyResolve = null; // 防止重复调用
+    }
+  },
+
+  // 等待配置加载完成
+  async waitForConfigReady(): Promise<AppConfig> {
+    if (this._isReady && this.globalData.appConfig) {
+      return this.globalData.appConfig;
+    }
+    return this._configReadyPromise!;
+  },
+
+  // 检查是否已就绪
+  isReady(): boolean {
+    return this._isReady;
   }
 })

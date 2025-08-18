@@ -1,6 +1,6 @@
 <view class="container">
   <!-- 消息提示组件 -->
-  <t-message id="t-message" />
+  <t-message id="t-message" style="width : 90wv" />
   
   <!-- 标题区域 -->
   <view class="header">
@@ -38,8 +38,8 @@
 
   <!-- 底部提示 -->
 
-  <t-footer text="支持平台：抖音 小红书 B站 快手"></t-footer>
-  <t-footer text="复制文案和下载视频需要观看激励视频广告"></t-footer>
+  <t-footer text="{{homeFooterInfo1}}"></t-footer>
+  <t-footer text="{{homeFooterInfo2}}"></t-footer>
 
   <!-- 结果弹框 -->
   <t-popup visible="{{showResult}}" class="result-modal" bind:visible-change="onModalBackdrop" placement="center">
@@ -48,7 +48,7 @@
         <t-icon name="close" t-class="close-icon" />
       </view>
       <view class="video-info">
-        <image class="video-cover" mode="aspectFill" src="{{result.cover}}" />
+        <video class="video-cover" src="{{result.url}}" />
         <text class="video-title">{{result.title}}</text>
         <view class="video-content-wrapper">
           <!-- 行级注释: 显示当前内容（预览或完整） -->
@@ -56,14 +56,10 @@
         </view>
       </view>
       <view class="action-buttons">
-        <t-button t-class="btn-copy" bind:tap="copyContent">
-          <t-icon wx:if="{{!isContentUnlocked}}" name="lock" size="16" slot="icon" />
-          <t-icon wx:else name="check" size="16" slot="icon" />
+        <t-button t-class="btn-copy" icon="{{ isContentUnlocked  ?'' : 'rotate-locked' }}" bind:tap="copyContent">
           {{isContentUnlocked ? '复制完整文案' : '复制文案'}}
         </t-button>
-        <t-button t-class="btn-download" bind:tap="downloadVideo">
-          <t-icon wx:if="{{!isContentUnlocked}}" name="lock" size="16" slot="icon" />
-          <t-icon wx:else name="download" size="16" slot="icon" />
+        <t-button t-class="btn-download" icon="{{ isContentUnlocked  ?'' : 'rotate-locked' }}" bind:tap="downloadVideo">
           {{isContentUnlocked ? '下载视频' : '解锁下载'}}
         </t-button>
       </view>
@@ -73,7 +69,7 @@
 <!-- <t-fab bind:click="handleClick" class="t-fab" icon="user-1" aria-label="我的"> -->
 <t-fab
   customStyle="{{'right: 48rpx;bottom:80rpx;'}}"
-  bind:click="handleClick"
+  bind:tap="handleFabClick"
 >
   <view  class="wrap">
       <t-icon name="user-1" size="24" />

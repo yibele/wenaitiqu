@@ -1,0 +1,10 @@
+{
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-footer": "tdesign-miniprogram/footer/footer",
+    "t-message": "tdesign-miniprogram/message/message"
+  },
+  "navigationBarTitleText": "我的",
+  "navigationBarBackgroundColor": "#fafafa"
+}

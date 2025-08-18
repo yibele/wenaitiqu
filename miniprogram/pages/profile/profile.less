@@ -1,0 +1,183 @@
+// 主容器
+.container {
+  min-height: 100vh;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #616161;
+}
+
+// 用户信息卡片
+.profile-header {
+  width: 100%;
+  max-width: 640rpx;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 48rpx 32rpx;
+  margin: 32rpx 0;
+  text-align: center;
+  
+  // 头像
+  .avatar {
+    width: 160rpx;
+    height: 160rpx;
+    border-radius: 50%;
+    margin: 0 auto 32rpx;
+    background: linear-gradient(135deg, #616161, #171717);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 64rpx;
+    font-weight: bold;
+    letter-spacing: -0.02em;
+  }
+  
+  // 用户名
+  .user-name {
+    display: block;
+    font-size: 40rpx;
+    font-weight: bold;
+    color: #616161;
+    margin-bottom: 16rpx;
+    letter-spacing: -0.02em;
+    font-family: 'ZhanKuLogo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+  
+  // 用户描述
+  .user-desc {
+    display: block;
+    font-size: 28rpx;
+    color: #616161;
+    margin-bottom: 32rpx;
+    line-height: 1.4;
+  }
+  
+  // 统计数据
+  .stats {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 32rpx;
+    border-top: 1px solid #f0f0f0;
+    
+    .stat-item {
+      text-align: center;
+      flex: 1;
+      
+      .stat-number {
+        display: block;
+        font-size: 36rpx;
+        font-weight: bold;
+        color: #616161;
+        margin-bottom: 8rpx;
+        font-family: 'ZhanKuLogo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+      
+      .stat-label {
+        display: block;
+        font-size: 24rpx;
+        color: #737373;
+      }
+    }
+  }
+}
+
+// 操作按钮区域
+.action-section {
+  width: 100%;
+  max-width: 640rpx;
+  margin-bottom: 48rpx;
+  
+  .action-item {
+    display: flex;
+    align-items: center;
+    padding: 32rpx;
+    background: #ffffff;
+    border-radius: 20rpx;
+    margin-bottom: 24rpx;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    
+    &:active {
+      transform: translateY(2rpx);
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+    }
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    // 图标容器
+    .action-icon {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 32rpx;
+      
+      &.share-icon {
+        background: linear-gradient(135deg, #616161, #171717);
+      }
+      
+      &.reward-icon {
+        background: linear-gradient(135deg, #616161, #171717);
+      }
+      
+      &.contact-icon {
+        background: linear-gradient(135deg, #616161, #171717);
+      }
+    }
+    
+    // 内容区域
+    .action-content {
+      flex: 1;
+      
+      .action-title {
+        display: block;
+        font-size: 32rpx;
+        font-weight: 600;
+        color: #616161;
+        margin-bottom: 8rpx;
+        font-family: 'ZhanKuLogo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+      
+      .action-desc {
+        display: block;
+        font-size: 24rpx;
+        color: #616161;
+        line-height: 1.4;
+      }
+    }
+    
+    // 箭头图标
+    .arrow-icon {
+      color: #a3a3a3 !important;
+      font-size: 32rpx !important;
+    }
+  }
+}
+
+// 底部提示
+.footer-tips {
+  position: fixed;
+  bottom: 40rpx;
+  left: 0;
+  right: 0;
+  width: 100%;
+  text-align: center;
+  
+  .tip-text {
+    display: block;
+    font-size: 24rpx;
+    color: #a3a3a3;
+    line-height: 1.6;
+    margin-bottom: 8rpx;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

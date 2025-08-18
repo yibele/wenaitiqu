@@ -2,6 +2,13 @@ import Message from 'tdesign-miniprogram/message/index';
 // index.ts
 const app = getApp();
 
+// Coze API 配置（前端直接调用）
+const COZE_CONFIG = {
+  BASE_URL: 'https://api.coze.cn',
+  AUTH_TOKEN: 'sat_IYKfCL5LZ640EHqXBgUqFN1NrMdo8JS0hG35mbXNHtSH7D8zh9l6ExkaQBRRRBYF',
+  WORKFLOW_ID: '7535294053631819826'
+};
+
 // 视频提取结果接口
 interface ExtractResult {
   content: string;
@@ -22,12 +29,16 @@ Page({
       content: '',
       url: ''
     },
-    displayContent: '' // 当前显示的内容（预览或完整）
+    displayContent: '', // 当前显示的内容（预览或完整）
+    // 行级注释：配置项相关数据
+    homeFooterInfo1: '支持平台：抖音 小红书 B站 快手',
+    homeFooterInfo2: '复制文案和下载视频需要观看激励视频广告'
   },
 
   // 显示消息提示
   showMessage(content: string, _theme: 'info' | 'success' | 'warning' | 'error' = 'info', duration: number = 3000) {
     Message.info({
+      offset : [50,32],
       content,
       duration,
     });
@@ -43,8 +54,89 @@ Page({
   // 更新显示内容
   updateDisplayContent() {
     const fullContent = this.data.result.content;
-    const displayContent = this.data.isContentUnlocked ? fullContent : this.getPreviewContent(fullContent);
+    const displayContent =  this.getPreviewContent(fullContent);
     this.setData({ displayContent });
+  },
+
+  // 前端直接调用 Coze API 查询任务结果
+  async queryTaskResultDirectly(executeId: string) {
+    const queryUrl = `${COZE_CONFIG.BASE_URL}/v1/workflows/${COZE_CONFIG.WORKFLOW_ID}/run_histories/${executeId}`;
+    
+    try {
+      const response = await new Promise<WechatMiniprogram.RequestSuccessCallbackResult>((resolve, reject) => {
+        wx.request({
+          url: queryUrl,
+          method: 'GET',
+          header: {
+            'Authorization': `Bearer ${COZE_CONFIG.AUTH_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          success: resolve,
+          fail: reject
+        });
+      });
+
+      console.log('前端直接查询Coze API响应:', response);
+
+      if (response.statusCode !== 200) {
+        throw new Error(`HTTP ${response.statusCode}: ${response.data}`);
+      }
+
+      const result = response.data as any;
+      if (result.code !== 0) {
+        throw new Error(`API错误: ${result.msg}`);
+      }
+
+      return result.data;
+    } catch (error: any) {
+      console.error('前端调用Coze API失败:', error);
+      throw error;
+    }
+  },
+
+  // 解析 Coze API 返回的结果
+  parseCozeResult(data: any): ExtractResult {
+    console.log('开始解析Coze结果, 原始数据:', data);
+    
+    if (!data || data.length === 0) {
+      throw new Error('没有找到执行结果');
+    }
+
+    const taskData = data[0];
+    console.log('任务数据:', taskData);
+    console.log('任务状态:', taskData.execute_status);
+    
+    if (taskData.execute_status !== 'Success') {
+      throw new Error(`任务执行失败，状态: ${taskData.execute_status}`);
+    }
+
+    // 解析输出数据
+    const outputStr = taskData.output;
+    console.log('输出字符串:', outputStr);
+    
+    if (!outputStr) {
+      throw new Error('输出数据为空');
+    }
+    
+    const outputData = JSON.parse(outputStr);
+    console.log('解析后的输出数据:', outputData);
+    
+    const resultStr = outputData.Output;
+    console.log('结果字符串:', resultStr);
+    
+    if (!resultStr) {
+      throw new Error('Output字段为空');
+    }
+    
+    const result = JSON.parse(resultStr);
+    console.log('最终解析结果:', result);
+
+    return {
+      content: result.content || '',
+      photo: result.photo || '',
+      title: result.title || '',
+      url: result.url || ''
+    };
   },
 
   // 验证视频链接格式
@@ -124,12 +216,12 @@ Page({
 
       const executeId = sendResponse.data.executeId;
       
-      // 行级注释: 第二步：开始轮询查询结果
+      // 行级注释: 第二步：开始轮询查询结果（前端直接调用）
       this.showMessage('任务已发送，正在解析视频内容...', 'info');
-      const extractData = await this.pollTaskResult(executeId);
+      const extractData = await this.pollTaskResultDirectly(executeId);
       
-      // 行级注释: 更新用户提取次数
-      await app.updateExtractCount();
+      // 行级注释: 获取成功后，调用云函数更新用户提取次数
+      await this.updateUserExtractCount();
       
       // 行级注释: 更新页面数据并显示结果，重置解锁状态
       this.setData({
@@ -174,43 +266,20 @@ Page({
     }
   },
 
-  // 轮询查询任务结果
-  async pollTaskResult(executeId: string, maxAttempts: number = 30, interval: number = 5000): Promise<ExtractResult> {
-    console.log('开始轮询查询任务结果，执行ID:', executeId);
+  // 轮询查询任务结果（前端直接调用Coze API）
+  async pollTaskResultDirectly(executeId: string, maxAttempts: number = 30, interval: number = 5000): Promise<ExtractResult> {
+    console.log('开始轮询查询任务结果（前端直接调用），执行ID:', executeId);
     
     for (let i = 0; i < maxAttempts; i++) {
       try {
         console.log(`第${i + 1}次查询，执行ID: ${executeId}`);
         
-        // 行级注释: 调用云函数查询任务状态
-        const queryResult = await wx.cloud.callFunction({
-          name: 'extractText',
-          data: { 
-            action: 'queryTask',
-            executeId: executeId 
-          }
-        });
-
-        console.log('云函数调用结果:', queryResult);
-
-        if (!queryResult.result) {
-          console.error('云函数返回结果为空');
-          throw new Error('查询任务失败：云函数返回空结果');
-        }
-
-        const response = queryResult.result as any;
-        console.log(`第${i + 1}次查询响应:`, response);
+        // 行级注释: 前端直接调用 Coze API 查询任务状态
+        const data = await this.queryTaskResultDirectly(executeId);
         
-        if (response.success && response.status === 'success') {
-          // 行级注释: 任务执行成功，返回结果
-          console.log('任务执行成功，获取到结果:', response.data);
-          return response.data as ExtractResult;
-        } 
-        else if (response.status === 'failed') {
-          console.error('任务执行失败:', response.error);
-          throw new Error(response.error || '任务执行失败');
-        }
-        else if (response.status === 'running') {
+        console.log(`第${i + 1}次查询结果:`, data);
+
+        if (!data || data.length === 0) {
           // 行级注释: 任务还在执行中，显示进度信息，每次增加5%
           const progress = Math.min((i + 1) * 5, 95);
           console.log(`任务执行中，进度: ${progress}%`);
@@ -220,20 +289,36 @@ Page({
           await new Promise(resolve => setTimeout(resolve, interval));
           continue;
         }
-        else if (!response.success) {
-          // 行级注释: 查询未成功，可能是网络问题或API错误
-          console.warn(`第${i + 1}次查询未成功:`, response);
-          if (i < maxAttempts - 1) {
-            console.log('等待后重试...');
-            await new Promise(resolve => setTimeout(resolve, interval));
-            continue;
-          } else {
-            throw new Error(response.error || '查询失败');
+
+        const taskData = data[0];
+        console.log('任务状态详情:', {
+          execute_status: taskData.execute_status,
+          create_time: taskData.create_time,
+          update_time: taskData.update_time,
+          hasOutput: !!taskData.output
+        });
+        
+        if (taskData.execute_status === 'Success') {
+          // 行级注释: 任务执行成功，解析并返回结果
+          if (!taskData.output) {
+            throw new Error('任务完成但未获取到结果数据');
           }
+          
+          const result = this.parseCozeResult(data);
+          console.log('任务执行成功，解析结果:', result);
+          return result;
+        } 
+        else if (taskData.execute_status === 'Failed') {
+          console.error('任务执行失败');
+          throw new Error(taskData.error_message || '任务执行失败');
         }
         else {
-          // 行级注释: 其他状态，继续等待
-          console.log(`未知状态，继续等待: ${JSON.stringify(response)}`);
+          // 行级注释: 任务还在执行中，显示进度信息，每次增加5%
+          const progress = Math.min((i + 1) * 5, 95);
+          console.log(`任务仍在执行中，状态: ${taskData.execute_status}，进度: ${progress}%`);
+          this.showMessage(`解析进度 ${progress}%，请耐心等待...`, 'info', 3000);
+          
+          // 行级注释: 等待一段时间后重试
           await new Promise(resolve => setTimeout(resolve, interval));
           continue;
         }
@@ -255,11 +340,83 @@ Page({
     throw new Error('视频长度过大,解析超时');
   },
 
+  // 调用云函数更新用户提取次数
+  async updateUserExtractCount() {
+    try {
+      console.log('调用云函数更新用户提取次数');
+      await wx.cloud.callFunction({
+        name: 'extractText', 
+        data: { 
+          action: 'updateExtractCount'
+        }
+      });
+      console.log('用户提取次数更新成功');
+      
+      // 行级注释: 同时更新本地全局数据
+      const app = getApp();
+      const currentStats = app.getUserStats();
+      if (currentStats) {
+        app.updateUserStats({
+          extractCount: currentStats.extractCount + 1
+        });
+      }
+    } catch (error) {
+      console.error('更新用户提取次数失败:', error);
+      // 行级注释: 这里不抛出错误，因为主要功能已完成
+    }
+  },
+
+  onLoad() {
+    // 行级注释: 加载自定义字体
+    wx.loadFontFace({
+      family: 'ZhanKuLogo',
+      source: 'url("https://ark-auto-2101613510-cn-beijing-default.tos-cn-beijing.volces.com/logo_zhanku.otf")',
+      global: true,
+      success: console.log,
+      fail: (res)=>{
+        console.log(res)
+      },
+    });
+    
+    // 行级注释: 加载配置项并更新页面显示
+    this.loadConfigSettings();
+  },
+
+    // 加载配置设置（Promise 等待模式）
+  async loadConfigSettings() {
+    const app = getApp();
+    
+    try {
+      // 行级注释: 等待配置加载完成，不再有时序问题
+      console.log('等待配置加载完成...');
+      const config = await app.waitForConfigReady();
+      console.log('index 页面配置已就绪:', config);
+      
+      // 行级注释: 使用配置项更新页面数据
+      this.setData({
+        homeFooterInfo1: config.homeFooterInfo1,
+        homeFooterInfo2: config.homeFooterInfo2
+      });
+    } catch (error) {
+      console.error('加载配置失败:', error);
+      // 行级注释: 使用默认配置
+      this.setData({
+        homeFooterInfo1: '支持平台：抖音 小红书 B站 快手',
+        homeFooterInfo2: '复制文案和下载视频需要观看激励视频广告'
+      });
+    }
+  },
+
   // 观看激励视频解锁完整内容
   watchRewardedVideoToUnlock() {
+    // 行级注释: 获取配置的广告ID
+    const app = getApp();
+    const config = app.getAppConfig();
+    const adUnitId = config?.rewardedVideoAdId || 'adunit-xxx';
+    
     // 行级注释: 创建激励视频广告实例
     const rewardedVideoAd = wx.createRewardedVideoAd({
-      adUnitId: 'adunit-xxx' // 请替换为你的广告位ID
+      adUnitId: adUnitId
     });
 
     rewardedVideoAd.onLoad(() => {
@@ -327,6 +484,19 @@ Page({
       },
       fail: () => {
         this.showMessage('复制失败，请重试', 'error');
+      }
+    });
+  },
+
+  handleFabClick  () {
+    // 行级注释：点击悬浮按钮跳转到个人资料页面
+    wx.navigateTo({
+      url: '/pages/profile/profile',
+      success: () => {
+        console.log('成功跳转到个人资料页面');
+      },
+      fail: (error) => {
+        console.error('跳转失败:', error);
       }
     });
   },
@@ -441,18 +611,26 @@ Page({
 
   // 页面分享配置
   onShareAppMessage() {
+    // 行级注释: 使用配置项
+    const app = getApp();
+    const config = app.getAppConfig();
+    
     return {
-      title: '提取文案 - 一键获取视频文案',
+      title: config?.shareTitle || '提取文案 - 一键获取视频文案',
       path: '/pages/index/index',
-      imageUrl: '/static/imgs/index_icon.png'
+      imageUrl: config?.shareCover || '/static/imgs/index_icon.png'
     };
   },
 
   // 分享到朋友圈
   onShareTimeline() {
+    // 行级注释: 使用配置项
+    const app = getApp();
+    const config = app.getAppConfig();
+    
     return {
-      title: '提取文案 - 一键获取视频文案',
-      imageUrl: '/static/imgs/index_icon.png'
+      title: config?.shareTitle || '提取文案 - 一键获取视频文案',
+      imageUrl: config?.shareCover || '/static/imgs/index_icon.png'
     };
   },
 

@@ -213,6 +213,28 @@ exports.main = async (event, context) => {
         }
       }
     } 
+    else if (action === 'updateExtractCount') {
+      // 行级注释: 更新用户提取次数
+      console.log('更新用户提取次数');
+      
+      try {
+        // 行级注释: 这里可以添加数据库操作来更新用户提取次数
+        // 目前只返回成功，实际项目中需要连接数据库
+        console.log('用户提取次数更新成功');
+        
+        return {
+          success: true,
+          message: '用户提取次数更新成功'
+        }
+      } catch (updateError) {
+        console.error('更新用户提取次数失败:', updateError);
+        return {
+          success: false,
+          error: '更新用户提取次数失败',
+          code: 'UPDATE_COUNT_ERROR'
+        }
+      }
+    }
     else {
       return {
         success: false,

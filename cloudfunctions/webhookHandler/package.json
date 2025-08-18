@@ -1,0 +1,10 @@
+{
+  "name": "webhookHandler",
+  "version": "1.0.0",
+  "description": "处理Coze API webhook回调的云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "crypto": "^1.0.1"
+  }
+}

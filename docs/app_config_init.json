@@ -1,0 +1,31 @@
+{
+  "_id": "global",
+  "rewardedVideoAdId": "adunit-xxx",
+  "nativeTemplateAdId": "adunit-yyy", 
+  "interstitialAdId": "adunit-zzz",
+  "shareTitle": "提取文案 - 一键获取视频文案",
+  "shareCover": "/static/imgs/index_icon.png",
+  "homeNotice": "有问题请联系作者",
+  "initialPoints": 100,
+  "inviteRewardPoints": 50,
+  "checkinPoints": 10,
+  "adWatchInterval": 300,
+  "homeFooterInfo1": "支持平台：抖音 小红书 B站 快手",
+  "homeFooterInfo2": "提交任务后可关闭页面，完成时将通过微信通知",
+  "profileFooterInfo": "感谢您使用文案提取助手",
+  "subscriptionTemplateIds": {
+    "success": "your_success_template_id",
+    "failed": "your_failed_template_id"
+  },
+  "webhookConfig": {
+    "secret": "your-webhook-secret-key",
+    "timeout": 300
+  },
+  "taskConfig": {
+    "maxRetries": 2,
+    "expirationHours": 24,
+    "pollIntervalSeconds": 30
+  },
+  "version": "2.0.0",
+  "updateTime": "2024-01-20T00:00:00.000Z"
+}
