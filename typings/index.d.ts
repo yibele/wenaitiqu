@@ -95,9 +95,8 @@ interface IAppOption {
   }
   userInfoReadyCallback?: WechatMiniprogram.GetUserInfoSuccessCallback,
   silentLogin(): Promise<void>;
-  createOrUpdateUser(openid: string): Promise<void>;
   getUserInfo(): UserInfo | null;
-  updateExtractCount(): Promise<void>;
+  updateExtractCount(): Promise<boolean | undefined>;
   updateShareCount(): Promise<void>;
   loadDefaultConfig(): Promise<AppConfig>;
   getAppConfig(): AppConfig | null;
@@ -105,6 +104,8 @@ interface IAppOption {
   updateUserStats(newStats: Partial<UserStats>): void;
   // 新增：等待配置加载完成的方法
   waitForConfigReady(): Promise<AppConfig>;
+  // 新增：等待登录就绪的方法
+  waitForLoginReady(): Promise<void>;
   // 新增：检查是否已就绪
   isReady(): boolean;
 }

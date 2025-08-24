@@ -89,6 +89,7 @@ Page({
     }
 
     const userInfo = app.getUserInfo();
+    console.log('用户数据', userInfo)
     if (!userInfo) {
       this.showMessage('请稍候，正在初始化用户信息...', 'info');
       return;
@@ -97,12 +98,13 @@ Page({
     // 1. 请求订阅消息权限
     try {
       const appConfig = app.getAppConfig();
-      const tmplId = appConfig?.subscribeTemplateId || ''; // 从全局配置获取模板ID
-      if (tmplId) {
-        await wx.requestSubscribeMessage({ tmplIds: tmplId });
+      const tmplIds = appConfig?.subscriptionTemplateIds || []; // 从全局配置获取模板ID数组
+      if (tmplIds && tmplIds.length > 0) {
+        await wx.requestSubscribeMessage({ tmplIds: tmplIds });
       }
     } catch (err) {
-      console.warn('订阅消息授权失败', err);
+      console.warn('请求订阅消息权限失败:', err);
+      // 行级注释: 订阅消息权限失败不影响主流程，继续执行
     }
 
     this.setData({ parsing: true });
@@ -113,7 +115,7 @@ Page({
       const res = await wx.cloud.callFunction({
         name: 'startJob',
         data: {
-          type: 'video_copy', // 任务类型
+          type: 'get_video_content', // 任务类型
           params: {
             url: url // 视频链接参数
           }
@@ -123,7 +125,7 @@ Page({
       // 3. 设置数据库监听
       const result = res.result as any;
       if (result && result.success) {
-        this.setupDatabaseWatch(result.jobId, url);
+        this.setupDatabaseWatch(result.jobId);
       } else {
         throw new Error('任务创建失败');
       }
@@ -136,17 +138,18 @@ Page({
   },
 
   // 设置数据库监听
-  setupDatabaseWatch(taskId: string, originalUrl: string) {
+  setupDatabaseWatch(taskId: string) {
+    console.log('设置数据库监听', taskId);
     const db = wx.cloud.database();
     const watcher = db.collection('coze_jobs').doc(taskId).watch({
       onChange: (snapshot) => {
         if (snapshot.docs.length > 0) {
           const job = snapshot.docs[0];
-          if (job.status === 'completed' || job.status === 'failed') {
+          if (job.status === 'success' || job.status === 'failed') {
             this.closeWatch(); // 收到最终状态后关闭监听
             this.setData({ parsing: false });
 
-            if (job.status === 'completed') {
+            if (job.status === 'success') {
               // 任务成功
               this.updateUserExtractCount();
               this.setData({
@@ -156,7 +159,7 @@ Page({
                   cover: job.result.photo || '/static/imgs/index_icon.png',
                   title: job.result.title || '未获取到标题',
                   content: job.result.content || '未获取到内容',
-                  url: job.result.url || originalUrl
+                  url: job.result.url || ''
                 }
               }, () => {
                 this.updateDisplayContent();
@@ -165,7 +168,7 @@ Page({
               this.setData({ videoUrl: '' });
             } else {
               // 任务失败
-              this.showMessage(job.error || '解析失败，请稍后重试', 'error');
+              this.showMessage('解析失败，请稍后重试');
             }
           }
         }
@@ -193,22 +196,19 @@ Page({
   // 调用云函数更新用户提取次数
   async updateUserExtractCount() {
     try {
-      await wx.cloud.callFunction({ name: 'updateUserExtractCount' });
-      const currentStats = app.getUserStats();
-      if (currentStats) {
-        app.updateUserStats({ extractCount: currentStats.extractCount + 1 });
-      }
+      const res = await app.updateExtractCount();
     } catch (error) {
       console.error('更新用户提取次数失败:', error);
     }
   },
 
-  onLoad() {
+  async onLoad() {
     wx.loadFontFace({
       family: 'ZhanKuLogo',
       source: 'url("https://ark-auto-2101613510-cn-beijing-default.tos-cn-beijing.volces.com/logo_zhanku.otf")',
       global: true
     });
+    await app.waitForLoginReady(); // 等待 app.ts 完成 createOrUpdateUser，确保 userInfo 就绪
     this.loadConfigSettings();
   },
 

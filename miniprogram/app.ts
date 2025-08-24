@@ -12,10 +12,19 @@ App({
   _configReadyPromise: null as Promise<AppConfig> | null,
   _isReady: false,
 
+  // 登录就绪 Promise 控制器
+  _loginReadyResolve: null as (() => void) | null,
+  _loginReadyPromise: null as Promise<void> | null,
+  _loginReady: false,
+
   onLaunch() {
     // 行级注释: 初始化配置加载 Promise
     this._configReadyPromise = new Promise<AppConfig>((resolve) => {
       this._configReadyResolve = resolve;
+    });
+    // 行级注释: 初始化登录就绪 Promise
+    this._loginReadyPromise = new Promise<void>((resolve) => {
+      this._loginReadyResolve = resolve;
     });
 
     // 行级注释: 初始化云开发
@@ -31,8 +40,7 @@ App({
   // 静默登录方法
   async silentLogin() {
     try {
-      
-      // 行级注释: 调用云函数获取openid和配置信息
+      // 行级注释: 调用云函数获取openid、配置信息和用户数据
       const loginResult = await wx.cloud.callFunction({
         name: 'login'
       });
@@ -58,10 +66,28 @@ App({
         // 行级注释: 保存用户统计数据
         if (result.userStats) {
           this.globalData.userStats = result.userStats;
-          console.log('用户统计数据已加载:', result.userStats);
         } else {
           console.warn('未获取到用户统计数据');
         }
+
+        // 行级注释: 从云函数返回的用户数据构建 userInfo
+        if (result.userInfo) {
+          this.globalData.userInfo = {
+            _id: result.userInfo._id,
+            _openid: openid,
+            extract_count: result.userInfo.extract_count,
+            share_count: result.userInfo.share_count,
+            points: result.userInfo.points,
+            created_at: result.userInfo.created_at,
+            last_login_at: result.userInfo.last_login_at
+          };
+          console.log('用户信息已设置:', this.globalData.userInfo);
+        } else {
+          console.warn('云函数未返回用户信息');
+        }
+
+        // 行级注释: 标记登录完成
+        this._markLoginReady();
       }
 
     } catch (error) {
@@ -70,6 +96,7 @@ App({
       const defaultConfig = await this.loadDefaultConfig();
       // 行级注释: 确保即使登录失败也通知配置就绪
       this._markConfigReady(defaultConfig);
+      this._markLoginReady();
       wx.showToast({
         title: ' 用户登录失败，请联系管理员',
         icon: 'none'
@@ -77,63 +104,7 @@ App({
     }
   },
 
-  // 创建或更新用户记录
-  async createOrUpdateUser(openid: string) {
-    try {
-      const db = wx.cloud.database();
-      const usersCollection = db.collection('users');
 
-      // 行级注释: 查询当前用户记录（云开发会自动基于_openid过滤）
-      const userQuery = await usersCollection.limit(1).get();
-
-      const now = new Date();
-
-      if (userQuery.data.length === 0) {
-        // 行级注释: 用户不存在，创建新用户记录（_openid会自动注入）
-        const newUserData = {
-          extract_count: 0,
-          share_count: 0,
-          points: 0,
-          created_at: now,
-          last_login_at: now
-        };
-
-        const addResult = await usersCollection.add({
-          data: newUserData
-        });
-
-        // 行级注释: 保存用户信息到globalData
-        this.globalData.userInfo = {
-          _id: addResult._id as string,
-          _openid: openid,
-          ...newUserData
-        };
-
-        console.log('新用户创建成功:', addResult._id);
-      } else {
-        // 行级注释: 用户已存在，更新最后登录时间
-        const existingUser = userQuery.data[0] as UserInfo;
-        
-        await usersCollection.doc(existingUser._id!).update({
-          data: {
-            last_login_at: now
-          }
-        });
-
-        // 行级注释: 更新globalData中的用户信息
-        this.globalData.userInfo = {
-          ...existingUser,
-          _openid: openid,
-          last_login_at: now
-        };
-
-        console.log('用户登录时间已更新:', existingUser._id);
-      }
-    } catch (error) {
-      console.error('创建或更新用户失败:', error);
-      throw error;
-    }
-  },
 
   // 获取用户信息的便捷方法
   getUserInfo(): UserInfo | null {
@@ -160,8 +131,10 @@ App({
       if (this.globalData.userInfo) {
         this.globalData.userInfo.extract_count += 1;
       }
+      return true;
     } catch (error) {
       console.error('更新提取次数失败:', error);
+      return false;
     }
   },
 
@@ -196,9 +169,9 @@ App({
   async loadDefaultConfig(): Promise<AppConfig> {
     // 行级注释: 使用默认配置
     const defaultConfig: AppConfig = {
-      rewardedVideoAdId: 'adunit-xxx',
-      nativeTemplateAdId: 'adunit-yyy', 
-      interstitialAdId: 'adunit-zzz',
+      rewardedVideoAdId: 'null',
+      nativeTemplateAdId: 'null', 
+      interstitialAdId: 'null',
       shareTitle: '提取文案 - 一键获取视频文案',
       shareCover: '/static/imgs/index_icon.png',
       homeNotice: '有问题请联系作者',
@@ -249,12 +222,29 @@ App({
     }
   },
 
+  // 标记登录已就绪
+  _markLoginReady(): void {
+    this._loginReady = true;
+    if (this._loginReadyResolve) {
+      this._loginReadyResolve();
+      this._loginReadyResolve = null; // 防止重复调用
+    }
+  },
+
   // 等待配置加载完成
   async waitForConfigReady(): Promise<AppConfig> {
     if (this._isReady && this.globalData.appConfig) {
       return this.globalData.appConfig;
     }
     return this._configReadyPromise!;
+  },
+
+  // 等待登录（确保 userInfo 已尝试就绪）
+  async waitForLoginReady(): Promise<void> {
+    if (this._loginReady) {
+      return;
+    }
+    return this._loginReadyPromise!;
   },
 
   // 检查是否已就绪

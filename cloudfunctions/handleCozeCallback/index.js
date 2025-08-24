@@ -9,7 +9,7 @@ const db = cloud.database()
 
 // --- 安全配置 ---
 // 自定义密钥词，需要与Coze端保持一致
-const SECRET_WORD = process.env.COZE_SECRET_WORD || 'mayixxzd2024';
+const SECRET_WORD = process.env.COZE_SECRET_WORD || '18647281217';
 // 时间戳有效窗口，单位：毫秒。例如10分钟。
 const TIMESTAMP_VALIDITY = 10 * 60 * 1000;
 
@@ -113,7 +113,7 @@ exports.main = async (event, context) => {
       data: {
         status: status,
         finishTime: new Date(),
-        result: result
+        result: JSON.parse(result)
       }
     })
 

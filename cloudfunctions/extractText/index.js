@@ -19,8 +19,6 @@ async function sendExtractTask(input) {
     is_async: true
   };
   
-  console.log('发送任务请求数据:', JSON.stringify(requestData, null, 2));
-  console.log('使用的Auth Token:', COZE_CONFIG.AUTH_TOKEN.substring(0, 20) + '...');
   
   const response = await axios.post(
     `${COZE_CONFIG.BASE_URL}/v1/workflow/run`,
@@ -33,9 +31,6 @@ async function sendExtractTask(input) {
     }
   );
 
-  console.log('发送任务响应状态:', response.status);
-  console.log('发送任务响应数据:', JSON.stringify(response.data, null, 2));
-
   const result = response.data;
   if (result.code !== 0) {
     throw new Error(`发送任务失败: ${result.msg}`);
@@ -44,30 +39,9 @@ async function sendExtractTask(input) {
   return result.execute_id;
 }
 
-// 查询任务结果
-async function getTaskResult(executeId) {
-  const queryUrl = `${COZE_CONFIG.BASE_URL}/v1/workflows/${COZE_CONFIG.WORKFLOW_ID}/run_histories/${executeId}`;
-  console.log('查询URL:', queryUrl);
-  console.log('执行ID:', executeId);
-  
-  const response = await axios.get(queryUrl, {
-    headers: {
-      Authorization: `Bearer ${COZE_CONFIG.AUTH_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  const result = response.data;
-  if (result.code !== 0) {
-    throw new Error(`查询任务失败: ${result.msg}`);
-  }
-
-  return result.data;
-}
 
 // 解析输出结果
 function parseOutput(data) {
-  console.log('开始解析输出结果, 原始数据:', JSON.stringify(data, null, 2));
   
   if (!data || data.length === 0) {
     throw new Error('没有找到执行结果')
