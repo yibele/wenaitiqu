@@ -167,7 +167,7 @@ App({
 
   // 加载默认配置
   async loadDefaultConfig(): Promise<AppConfig> {
-    // 行级注释: 使用默认配置
+    // 行级注释: 使用默认配置（暂时关闭广告功能）
     const defaultConfig: AppConfig = {
       rewardedVideoAdId: 'null',
       nativeTemplateAdId: 'null', 

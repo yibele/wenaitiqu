@@ -1,5 +1,6 @@
+import { appBaseInfo } from 'tdesign-miniprogram/common/utils';
 import Message from 'tdesign-miniprogram/message/index';
-
+const app = getApp();
 // profile.ts
 
 Page({
@@ -14,7 +15,7 @@ Page({
       points: 0,
       shareCount: 0
     },
-
+    uid : '',
     appConfig : {
       sharePoint : 5
     },
@@ -27,6 +28,10 @@ Page({
     console.log('个人资料页面加载');
     // 行级注释：加载用户统计数据
     this.loadUserStats();
+    const openid = app.getUserInfo();
+    this.setData({
+      uid :openid.openid 
+    })
     // 行级注释：加载配置项
     this.loadConfigSettings();
   },
@@ -146,7 +151,7 @@ Page({
     // 行级注释：显示打赏信息
     wx.showModal({
       title: '感谢您的支持！',
-      content: '您的支持是我继续开发的动力！\n\n如需打赏，请添加作者微信：\nwenzhang_help',
+      content: '您的支持是我继续开发的动力！\n\n如需打赏，请添加作者微信：yibu_ai',
       showCancel: true,
       cancelText: '取消',
       confirmText: '复制微信号',
@@ -171,7 +176,7 @@ Page({
     // 行级注释：显示联系方式
     wx.showModal({
       title: '联系作者',
-      content: '📧 邮箱：contact@example.com\n💬 微信：wenzhang_help\n📱 QQ群：123456789\n\n欢迎反馈问题或建议！',
+      content: '💬 微信：yibu_ai \n📱 抖音：伊布讲 AI\n\n 添加时记得备注小程序！',
       showCancel: true,
       cancelText: '取消',
       confirmText: '复制邮箱',
@@ -179,9 +184,9 @@ Page({
         if (res.confirm) {
           // 行级注释：复制邮箱地址
           wx.setClipboardData({
-            data: 'contact@example.com',
+            data: '微信：yibu_ai',
             success: () => {
-              this.showMessage('邮箱地址已复制！', 'success');
+              this.showMessage('微信已复制！', 'success');
             }
           });
         }
@@ -202,7 +207,7 @@ Page({
       title: config?.shareTitle || '提取文案小程序',
       desc: '超好用的视频文案提取工具！',
       path: '/pages/index/index',
-      imageUrl: config?.shareCover || '/static/imgs/index_icon.png'
+      imageUrl: config?.shareCover || '/static/imgs/share_logo.png'
     };
   },
 

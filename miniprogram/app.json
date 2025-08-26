@@ -9,7 +9,13 @@
     "navigationBarBackgroundColor": "#ffffff",
     "backgroundColor": "#f5f5f5"
   },
-
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "保存视频到相册"
+    }
+  },
+  "requiredPrivateInfos": [
+  ],
   "rendererOptions": {
     "skyline": {
       "defaultDisplayBlock": true,

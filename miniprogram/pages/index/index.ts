@@ -16,8 +16,9 @@ Page({
     },
     displayContent: '', // 当前显示的内容（预览或完整）
     homeFooterInfo1: '支持平台：抖音 小红书 B站 快手',
-    homeFooterInfo2: '复制文案和下载视频需要观看激励视频广告',
+    homeFooterInfo2: '一键获取视频文案，完全免费使用',
     watcher: null as any, // 用于保存数据库监听实例
+    hasAds: false, // 是否配置了广告
   },
 
   // 显示消息提示
@@ -29,16 +30,17 @@ Page({
     });
   },
 
-  // 获取预览内容（前50个字符）
+  // 获取预览内容（前100个字符）
   getPreviewContent(fullContent: string): string {
     if (!fullContent) return '';
-    if (fullContent.length <= 50) return fullContent;
-    return fullContent.substring(0, 50) + '...';
+    if (fullContent.length <= 100) return fullContent;
+    return fullContent.substring(0, 100) + '...';
   },
 
   // 更新显示内容
   updateDisplayContent() {
     const fullContent = this.data.result.content;
+    // 行级注释: 界面永远只显示前100个字符预览，避免长文案撑坏UI
     const displayContent = this.getPreviewContent(fullContent);
     this.setData({ displayContent });
   },
@@ -152,9 +154,11 @@ Page({
             if (job.status === 'success') {
               // 任务成功
               this.updateUserExtractCount();
+              
+              // 行级注释: 根据广告配置决定是否直接解锁内容
               this.setData({
                 showResult: true,
-                isContentUnlocked: false,
+                isContentUnlocked: !this.data.hasAds, // 没有广告配置时直接解锁
                 result: {
                   cover: job.result.photo || '/static/imgs/index_icon.png',
                   title: job.result.title || '未获取到标题',
@@ -196,7 +200,7 @@ Page({
   // 调用云函数更新用户提取次数
   async updateUserExtractCount() {
     try {
-      const res = await app.updateExtractCount();
+      await app.updateExtractCount();
     } catch (error) {
       console.error('更新用户提取次数失败:', error);
     }
@@ -221,9 +225,15 @@ Page({
   async loadConfigSettings() {
     try {
       const config = await app.waitForConfigReady();
+      // 行级注释: 正确判断是否有广告配置
+      const hasAds = config && config.rewardedVideoAdId && config.rewardedVideoAdId !== 'null';
+      
       this.setData({
-        homeFooterInfo1: config.homeFooterInfo1,
-        homeFooterInfo2: config.homeFooterInfo2
+        homeFooterInfo1: config.homeFooterInfo1 || '支持平台：抖音 小红书 B站 快手',
+        homeFooterInfo2: hasAds 
+          ? (config.homeFooterInfo2 || '复制文案和下载视频需要观看激励视频广告')
+          : '一键获取视频文案，完全免费使用',
+        hasAds: hasAds
       });
     } catch (error) {
       console.error('加载配置失败:', error);
@@ -283,23 +293,28 @@ Page({
       return;
     }
 
-    // 行级注释: 检查是否已解锁
-    if (!this.data.isContentUnlocked) {
-      // 行级注释: 未解锁，提示观看视频
-      wx.showModal({
-        title: '解锁完整内容',
-        content: '观看激励视频即可复制完整文案',
-        confirmText: '观看视频',
-        cancelText: '取消',
-        success: (res) => {
-          if (res.confirm) {
-            this.watchRewardedVideoToUnlock();
-          }
+    // 行级注释: 检查是否有广告配置
+    if (!this.data.hasAds) {
+      // 行级注释: 没有广告，直接复制完整内容
+      wx.setClipboardData({
+        data: fullContent,
+        success: () => {
+          this.showMessage('完整文案已复制到剪贴板！', 'success');
+        },
+        fail: () => {
+          this.showMessage('复制失败，请重试', 'error');
         }
       });
       return;
     }
-    
+
+    // 行级注释: 有广告配置，检查是否已解锁
+    if (!this.data.isContentUnlocked) {
+      // 行级注释: 未解锁，直接播放广告
+      this.watchRewardedVideoToUnlock();
+      return;
+    }
+
     // 行级注释: 已解锁，复制完整内容
     wx.setClipboardData({
       data: fullContent,
@@ -334,43 +349,236 @@ Page({
       return;
     }
 
-    // 行级注释: 检查是否已解锁
-    if (!this.data.isContentUnlocked) {
-      // 行级注释: 未解锁，提示观看视频
-      wx.showModal({
-        title: '解锁视频下载',
-        content: '观看激励视频即可获取视频下载链接',
-        confirmText: '观看视频',
-        cancelText: '取消',
-        success: (res) => {
-          if (res.confirm) {
-            this.watchRewardedVideoToUnlock();
-          }
-        }
-      });
+    // 行级注释: 检查是否有广告配置
+    if (!this.data.hasAds) {
+      // 行级注释: 没有广告，直接下载
+      this.performVideoDownload(videoUrl);
       return;
     }
 
-    // 行级注释: 已解锁，提供下载功能
-    wx.showModal({
-      title: '下载视频',
-      content: '是否要复制视频链接？您可以在浏览器中打开进行下载。',
-      confirmText: '复制链接',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          wx.setClipboardData({
-            data: videoUrl,
-            success: () => {
-              this.showMessage('视频链接已复制！', 'success');
-            },
-            fail: () => {
-              this.showMessage('复制失败，请重试', 'error');
+    // 行级注释: 有广告配置，检查是否已解锁
+    if (!this.data.isContentUnlocked) {
+      // 行级注释: 未解锁，直接播放广告
+      this.watchRewardedVideoToUnlock();
+      return;
+    }
+
+    // 行级注释: 已解锁，进行下载
+    this.performVideoDownload(videoUrl);
+  },
+
+    // 执行视频下载
+  async performVideoDownload(videoUrl: string) {
+    try {
+      console.log('准备下载视频，URL:', videoUrl);
+      await this.downloadToAlbum(videoUrl);
+      
+    } catch (error) {
+      console.error('下载视频失败:', error);
+      this.showMessage('下载失败，请重试', 'error');
+    }
+  },
+
+  // 检查是否是有效的视频URL
+  isValidVideoUrl(url: string): boolean {
+    if (!url) return false;
+    
+    // 行级注释: 检查文件扩展名
+    const videoExtensions = ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm', '.m4v'];
+    const hasVideoExtension = videoExtensions.some(ext => url.toLowerCase().includes(ext));
+    
+    // 行级注释: 检查是否包含视频相关的URL特征
+    const videoIndicators = ['video', 'media', 'stream'];
+    const hasVideoIndicator = videoIndicators.some(indicator => url.toLowerCase().includes(indicator));
+    
+    // 行级注释: 排除明显的非视频文件
+    const nonVideoExtensions = ['.json', '.txt', '.html', '.xml', '.js'];
+    const hasNonVideoExtension = nonVideoExtensions.some(ext => url.toLowerCase().includes(ext));
+    
+    console.log('URL 检查结果:', {
+      url,
+      hasVideoExtension,
+      hasVideoIndicator,
+      hasNonVideoExtension
+    });
+    
+    return (hasVideoExtension || hasVideoIndicator) && !hasNonVideoExtension;
+  },
+
+  // 下载视频到相册
+  async downloadToAlbum(videoUrl: string) {
+    let downloadTask: any = null;
+    
+    try {
+      // 行级注释: 检查并申请写入相册权限
+      const authResult = await this.requestSaveToPhotosAlbumAuth();
+      if (!authResult) {
+        this.showMessage('需要相册权限才能保存视频', 'warning');
+        return;
+      }
+
+      // 行级注释: 显示统一的进度条，初始状态
+      wx.showLoading({
+        title: '正在准备下载视频...',
+        mask: true
+      });
+
+      // 行级注释: 创建下载任务，带进度监听
+      downloadTask = wx.downloadFile({
+        url: videoUrl,
+        success: async (res) => {
+          try {
+            if (res.statusCode === 200) {
+              // 行级注释: 检查临时文件是否存在
+              try {
+                const fileManager = wx.getFileSystemManager();
+                const stats = fileManager.statSync(res.tempFilePath);
+                
+                if (stats.size === 0) {
+                  throw new Error('下载的文件为空');
+                }
+              } catch (statError) {
+                console.error('文件检查失败:', statError);
+                throw new Error('下载的文件无效，请重试');
+              }
+
+              // 行级注释: 保存视频到相册
+              await wx.saveVideoToPhotosAlbum({
+                filePath: res.tempFilePath
+              });
+
+              wx.hideLoading();
+              this.showMessage('视频已保存到相册！', 'success');
+            } else {
+              throw new Error(`下载失败，状态码: ${res.statusCode}`);
+            }
+          } catch (saveError: any) {
+            wx.hideLoading();
+            console.error('保存视频失败:', saveError);
+            
+            if (saveError.errMsg && saveError.errMsg.includes('auth')) {
+              // 行级注释: 权限问题，提供复制链接作为备选方案
+              wx.showModal({
+                title: '权限不足',
+                content: '无法直接保存视频，是否复制视频链接？',
+                confirmText: '复制链接',
+                cancelText: '取消',
+                success: (modalRes) => {
+                  if (modalRes.confirm) {
+                    wx.setClipboardData({
+                      data: videoUrl,
+                      success: () => {
+                        this.showMessage('视频链接已复制！', 'success');
+                      }
+                    });
+                  }
+                }
+              });
+            } else {
+              this.showMessage('保存失败：' + (saveError.errMsg || saveError.message || '未知错误'), 'error');
+            }
+          }
+        },
+        fail: (error) => {
+          console.error('下载视频失败:', error);
+          wx.hideLoading();
+          
+          // 行级注释: 分析错误类型并给出相应提示
+          let errorMessage = '下载失败';
+          if (error.errMsg) {
+            if (error.errMsg.includes('ENOENT') || error.errMsg.includes('no such file')) {
+              errorMessage = '视频链接无效或已过期';
+            } else if (error.errMsg.includes('network')) {
+              errorMessage = '网络连接失败，请检查网络';
+            } else if (error.errMsg.includes('timeout')) {
+              errorMessage = '下载超时，请重试';
+            } else {
+              errorMessage = `下载失败：${error.errMsg}`;
+            }
+          }
+          
+          wx.showModal({
+            title: '下载失败',
+            content: `${errorMessage}\n\n是否复制视频链接？您可以在浏览器中打开进行下载。`,
+            confirmText: '复制链接',
+            cancelText: '取消',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                wx.setClipboardData({
+                  data: videoUrl,
+                  success: () => {
+                    this.showMessage('链接已复制！请在浏览器中打开下载', 'success');
+                  },
+                  fail: () => {
+                    this.showMessage('复制失败，请重试', 'error');
+                  }
+                });
+              }
             }
           });
         }
+      });
+
+      // 行级注释: 监听下载进度
+      downloadTask.onProgressUpdate((progress: any) => {
+        const percent = Math.round(progress.progress);
+        const downloaded = Math.round(progress.totalBytesWritten / 1024); // KB
+        const total = Math.round(progress.totalBytesExpectedToWrite / 1024); // KB
+        // 行级注释: 统一在一个loading中显示进度
+        wx.showLoading({
+          title: `下载中 ${percent}%\n${downloaded}KB/${total}KB`,
+          mask: true
+        });
+      });
+
+    } catch (error: any) {
+      wx.hideLoading();
+      console.error('下载视频到相册失败:', error);
+      this.showMessage('下载失败：' + (error.message || error.errMsg || '未知错误'), 'error');
+    }
+  },
+
+  // 申请相册写入权限
+  async requestSaveToPhotosAlbumAuth(): Promise<boolean> {
+    try {
+      // 行级注释: 检查当前权限状态
+      const authSetting = await wx.getSetting();
+      
+      if (authSetting.authSetting['scope.writePhotosAlbum'] === false) {
+        // 行级注释: 用户之前拒绝过，需要引导到设置页面
+        const res = await wx.showModal({
+          title: '需要相册权限',
+          content: '需要获取您的相册权限，请在设置中开启',
+          confirmText: '去设置',
+          cancelText: '取消'
+        });
+
+        if (res.confirm) {
+          await wx.openSetting();
+          // 行级注释: 重新检查权限
+          const newAuthSetting = await wx.getSetting();
+          return newAuthSetting.authSetting['scope.writePhotosAlbum'] === true;
+        }
+        return false;
+      } else if (authSetting.authSetting['scope.writePhotosAlbum'] === undefined) {
+        // 行级注释: 还没有申请过权限，主动申请
+        try {
+          await wx.authorize({
+            scope: 'scope.writePhotosAlbum'
+          });
+          return true;
+        } catch (error) {
+          // 行级注释: 用户拒绝了权限申请
+          return false;
+        }
+      } else {
+        // 行级注释: 已经有权限
+        return true;
       }
-    });
+    } catch (error) {
+      console.error('获取权限状态失败:', error);
+      return false;
+    }
   },
 
   // 关闭结果弹框

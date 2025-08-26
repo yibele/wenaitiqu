@@ -95,19 +95,13 @@ exports.main = async (event, context) => {
   // 只有通过安全验证的请求，才能到达这里
   try {
     const callbackData = JSON.parse(event.body)
-    const { correlation_id, status, result } = callbackData
+    const { correlation_id, status, result,openid } = callbackData
 
     if (!correlation_id || !status || result === undefined) {
       throw new Error('Missing required fields in body');
     }
 
     console.log(`[回调处理] Job ID: ${correlation_id}, 状态: ${status}`)
-
-    // 首先，获取job文档以备后用（我们需要里面的openid）
-    const jobRecord = await db.collection('coze_jobs').doc(correlation_id).get()
-    if (!jobRecord.data) {
-      throw new Error(`Job with id ${correlation_id} not found.`);
-    }
 
     await db.collection('coze_jobs').doc(correlation_id).update({
       data: {
@@ -118,33 +112,6 @@ exports.main = async (event, context) => {
     })
 
     console.log(`[回调成功] Job ID: ${correlation_id} 已更新`)
-
-    // --- 3. 发送订阅消息 ---
-    // 只有在任务成功时才发送通知
-    
-      try {
-       
-        await cloud.openapi.subscribeMessage.send({
-          touser: 'o3Ory5J6OTVR04HcJLOu2qYmbOSA',
-          page: 'pages/index/index',
-          templateId: 'j41qf196-RzeupqQ2fm57cHi8sSDR0OckHAY9ehagiI', 
-          data: {
-            time2: {
-              value: "2025年8月20日 14:00"
-            },
-            character_string3: {
-              value:  'https://www.baidu.com'
-            }
-          },
-          miniprogramState: 'trial' // 'developer':开发版; 'trial':体验版; 'formal':正式版
-        })
-        console.log(`[订阅消息] 发送成功 to o3Ory5J6OTVR04HcJLOu2qYmbOSA`);
-      } catch (msgError) {
-        console.error(`[订阅消息] 发送失败 for job ${correlation_id}:`, msgError);
-        // 注意：这里我们只记录错误，不影响主流程的成功返回
-        // 因为回调本身已经处理成功了，消息推送是附加功能
-      }
-  
 
     
     // 向 Coze 服务器返回成功接收的响应

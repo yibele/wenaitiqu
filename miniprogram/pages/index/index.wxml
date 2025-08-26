@@ -56,11 +56,11 @@
         </view>
       </view>
       <view class="action-buttons">
-        <t-button t-class="btn-copy" icon="{{ isContentUnlocked  ?'' : 'rotate-locked' }}" bind:tap="copyContent">
-          {{isContentUnlocked ? '复制完整文案' : '复制文案'}}
+        <t-button t-class="btn-copy" bind:tap="copyContent">
+          {{ hasAds && !isContentUnlocked ? '解锁复制' : '复制文案' }}
         </t-button>
-        <t-button t-class="btn-download" icon="{{ isContentUnlocked  ?'' : 'rotate-locked' }}" bind:tap="downloadVideo">
-          {{isContentUnlocked ? '下载视频' : '解锁下载'}}
+        <t-button t-class="btn-download" bind:tap="downloadVideo">
+          {{ hasAds && !isContentUnlocked ? '解锁下载' : '下载视频' }}
         </t-button>
       </view>
     </view>
