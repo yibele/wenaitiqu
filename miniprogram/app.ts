@@ -143,6 +143,10 @@ App({
     const userInfo = this.globalData.userInfo;
     if (!userInfo || !userInfo._id) return;
 
+    // 行级注释: 获取配置中的分享奖励积分
+    const appConfig = this.getAppConfig();
+    const shareRewardPoints = appConfig?.inviteRewardPoints || 10;
+
     try {
       const db = wx.cloud.database();
       const usersCollection = db.collection('users');
@@ -151,17 +155,26 @@ App({
       await usersCollection.doc(userInfo._id).update({
         data: {
           share_count: db.command.inc(1),
-          points: db.command.inc(10) // 分享获得10积分
+          points: db.command.inc(shareRewardPoints) // 使用配置中的分享积分奖励
         }
       });
 
       // 行级注释: 更新本地缓存
       if (this.globalData.userInfo) {
         this.globalData.userInfo.share_count += 1;
-        this.globalData.userInfo.points += 10;
+        this.globalData.userInfo.points += shareRewardPoints;
       }
+
+      // 行级注释: 同时更新全局用户统计数据
+      if (this.globalData.userStats) {
+        this.globalData.userStats.shareCount += 1;
+        this.globalData.userStats.points += shareRewardPoints;
+      }
+
+      return shareRewardPoints; // 返回获得的积分数
     } catch (error) {
       console.error('更新分享次数失败:', error);
+      return 0;
     }
   },
 
@@ -175,8 +188,8 @@ App({
       shareTitle: '提取文案 - 一键获取视频文案',
       shareCover: '/static/imgs/index_icon.png',
       homeNotice: '有问题请联系作者',
-      initialPoints: 100,
-      inviteRewardPoints: 50,
+      initialPoints: 20,
+      inviteRewardPoints: 10,
       checkinPoints: 10,
       adWatchInterval: 300,
       homeFooterInfo1: '支持平台：抖音 小红书 B站 快手',

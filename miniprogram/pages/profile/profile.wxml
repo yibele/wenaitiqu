@@ -28,7 +28,7 @@
   <!-- 操作按钮区域 -->
   <view class="action-section">
     <!-- 行级注释：分享应用按钮 -->
-    <view class="action-item" bindtap="onShareApp">
+    <button class="action-item" open-type="share" plain="true" style="border: none; text-align: left;">
       <view class="action-icon share-icon">
         <t-icon name="share" size="20" color="#ffffff" />
       </view>
@@ -37,7 +37,7 @@
         <text class="action-desc">分享后获取{{appConfig.sharePoint}}积分</text>
       </view>
       <t-icon name="chevron-right" size="16" t-class="arrow-icon" />
-    </view>
+    </button>
     
     <!-- 行级注释：打赏作者按钮 -->
     <view class="action-item" bindtap="onRewardAuthor">

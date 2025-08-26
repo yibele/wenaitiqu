@@ -1,4 +1,3 @@
-import { appBaseInfo } from 'tdesign-miniprogram/common/utils';
 import Message from 'tdesign-miniprogram/message/index';
 const app = getApp();
 // profile.ts
@@ -25,7 +24,6 @@ Page({
 
   // 页面加载
   onLoad() {
-    console.log('个人资料页面加载');
     // 行级注释：加载用户统计数据
     this.loadUserStats();
     const openid = app.getUserInfo();
@@ -87,25 +85,6 @@ Page({
     }
   },
 
-  // 分享应用
-  onShareApp() {
-    console.log('点击分享应用');
-    
-    // 行级注释：触发微信分享菜单
-    wx.showShareMenu({
-      withShareTicket: true,
-      menus: ['shareAppMessage', 'shareTimeline'],
-      success: () => {
-        this.showMessage('请选择分享方式', 'info');
-        // 行级注释：显示分享菜单成功，但实际分享成功会在 onShareAppMessage 中处理
-      },
-      fail: () => {
-        // 行级注释：分享菜单显示失败则复制分享文案
-        this.copyShareText();
-      }
-    });
-  },
-
   // 复制分享文案
   copyShareText() {
     const shareText = '超好用的视频文案提取工具，支持抖音、小红书、B站、快手！快来试试吧~';
@@ -123,24 +102,28 @@ Page({
   },
 
   // 更新分享次数
-  updateShareCount() {
+  async updateShareCount() {
     const app = getApp();
-    const currentStats = app.getUserStats();
     
-    if (currentStats) {
-      const newShareCount = currentStats.shareCount + 1;
+    // 行级注释: 调用app.ts中的分享更新方法，获取配置的积分奖励
+    const rewardPoints = await app.updateShareCount();
+    
+    if (rewardPoints > 0) {
+      // 行级注释: 更新页面显示的数据
+      const userStats = app.getUserStats();
+      if (userStats) {
+        this.setData({
+          'stats.shareCount': userStats.shareCount,
+          'stats.points': userStats.points
+        });
+      }
       
-      // 行级注释：更新全局数据
-      app.updateUserStats({
-        shareCount: newShareCount
-      });
-      
-      // 行级注释：更新页面显示
-      this.setData({
-        'stats.shareCount': newShareCount
-      });
-      
-      console.log('分享次数已更新:', newShareCount);
+      // 行级注释: 显示获得积分的提示
+      this.showMessage(`分享成功！获得${rewardPoints}积分`, 'success');
+      console.log('分享次数已更新，获得积分:', rewardPoints);
+    } else {
+      // 行级注释: 分享失败或没有获得积分
+      this.showMessage('分享失败，请重试', 'error');
     }
   },
 
@@ -200,8 +183,10 @@ Page({
     const app = getApp();
     const config = app.getAppConfig();
     
-    // 行级注释：用户触发分享时更新分享次数
-    this.updateShareCount();
+    // 行级注释：用户触发分享时更新分享次数（异步执行，不阻塞分享）
+    this.updateShareCount().catch(err => {
+      console.error('更新分享次数失败:', err);
+    });
     
     return {
       title: config?.shareTitle || '提取文案小程序',
@@ -217,8 +202,10 @@ Page({
     const app = getApp();
     const config = app.getAppConfig();
     
-    // 行级注释：用户触发分享到朋友圈时更新分享次数
-    this.updateShareCount();
+    // 行级注释：用户触发分享到朋友圈时更新分享次数（异步执行，不阻塞分享）
+    this.updateShareCount().catch(err => {
+      console.error('更新分享次数失败:', err);
+    });
     
     return {
       title: config?.shareTitle || '提取文案小程序 - 视频文案提取神器',

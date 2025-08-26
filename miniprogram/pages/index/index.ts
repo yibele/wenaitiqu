@@ -97,6 +97,36 @@ Page({
       return;
     }
 
+    // 行级注释: 检查用户积分是否足够
+    const userStats = app.getUserStats();
+    if (!userStats || userStats.points < 1) {
+      // 行级注释: 积分不足，提示用户分享获得积分
+      const appConfig = app.getAppConfig();
+      const shareRewardPoints = appConfig?.inviteRewardPoints || 50;
+      
+      wx.showModal({
+        title: '积分不足',
+        content: `每次提取需要消耗1积分\n当前积分：${userStats?.points || 0}\n\n分享小程序可获得${shareRewardPoints}积分`,
+        showCancel: true,
+        cancelText: '取消',
+        confirmText: '立即分享',
+        success: (res) => {
+          if (res.confirm) {
+            // 行级注释: 用户选择分享，跳转到个人页面进行分享
+            wx.navigateTo({
+              url: '/pages/profile/profile',
+              success: () => {
+                setTimeout(() => {
+                  this.showMessage('请点击"分享应用"按钮获得积分', 'info');
+                }, 1000);
+              }
+            });
+          }
+        }
+      });
+      return;
+    }
+
     // 1. 请求订阅消息权限
     try {
       const appConfig = app.getAppConfig();
@@ -147,13 +177,16 @@ Page({
       onChange: (snapshot) => {
         if (snapshot.docs.length > 0) {
           const job = snapshot.docs[0];
-          if (job.status === 'success' || job.status === 'failed') {
+          if (job.status === 'success' || job.status === 'fail') {
             this.closeWatch(); // 收到最终状态后关闭监听
             this.setData({ parsing: false });
 
             if (job.status === 'success') {
               // 任务成功
               this.updateUserExtractCount();
+              
+              // 行级注释: 任务成功时扣减积分
+              this.deductUserPoints();
               
               // 行级注释: 根据广告配置决定是否直接解锁内容
               this.setData({
@@ -171,8 +204,10 @@ Page({
               this.showMessage('文案提取成功！', 'success');
               this.setData({ videoUrl: '' });
             } else {
-              // 任务失败
+              // 任务失败 - 不扣减积分
               this.showMessage('解析失败，请稍后重试');
+              console.log('解析失败，关闭监听');
+              this.closeWatch();
             }
           }
         }
@@ -203,6 +238,36 @@ Page({
       await app.updateExtractCount();
     } catch (error) {
       console.error('更新用户提取次数失败:', error);
+    }
+  },
+
+  // 扣减用户积分
+  async deductUserPoints() {
+    const userInfo = app.getUserInfo();
+    if (!userInfo || !userInfo._id) {
+      console.error('用户信息不存在，无法扣减积分');
+      return;
+    }
+
+    try {
+      const db = wx.cloud.database();
+      await db.collection('users').doc(userInfo._id).update({
+        data: {
+          points: db.command.inc(-1) // 扣减1积分
+        }
+      });
+
+      // 行级注释: 更新本地缓存
+      if (app.globalData.userInfo) {
+        app.globalData.userInfo.points -= 1;
+      }
+      if (app.globalData.userStats) {
+        app.globalData.userStats.points -= 1;
+      }
+
+      console.log('积分扣减成功');
+    } catch (error) {
+      console.error('扣减积分失败:', error);
     }
   },
 
